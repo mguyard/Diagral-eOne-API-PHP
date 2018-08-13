@@ -129,7 +129,11 @@ class Diagral_eOne{
         $this->sessionId = $data["sessionId"];
         return $data;
       } else {
-        $this->showErrors("crit","sessionId is not in the response",$data);
+        if ($data["message"] == "error.connect.mydiagralusernotfound") {
+          $this->showErrors("crit", "User not found.");
+        } else {
+          $this->showErrors("crit","sessionId is not in the response",$data);
+        }
       }
     } else {
       $this->showErrors("crit", "Unable to login to Diagral Cloud (http code : ".$httpRespCode.")");

@@ -1,3 +1,11 @@
+![License](https://badgen.net/github/license/mguyard/Diagral-eOne-API-PHP) ![Language](https://badgen.net/badge/Language/PHP/blue)
+![Last Commit](https://badgen.net/github/last-commit/mguyard/Diagral-eOne-API-PHP)
+![Open Issues](https://badgen.net/github/open-issues/mguyard/Diagral-eOne-API-PHP) ![Open Issues](https://badgen.net/github/open-prs/mguyard/Diagral-eOne-API-PHP)
+
+# Comment me contacter
+
+[![Twitter](https://badgen.net/badge/Twitter/mguyard/cyan?icon=twitter)](https://twitter.com/mguyard)
+
 # API PHP Alarme Diagral e-One
 
 Voici quelques lignes pour donner les exemples de démarrage de l'utilisation de l'API PHP Diagral e-One :

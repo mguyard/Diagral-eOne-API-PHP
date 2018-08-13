@@ -6,10 +6,11 @@
 
 [![Twitter](https://badgen.net/badge/Twitter/mguyard/cyan?icon=twitter)](https://twitter.com/mguyard)
 
-<aside class="warning">
-L'utilisation de l'API Diagral dans ce code, n'est pas officielle. Elle est le résultat d'un "Reverse" sur les appels que j'ai pu voir.
-Celle-ci pourrait ne plus fonctionner suite à un changement de Diagral.
-</aside>
+
+# /!\ Attention :
+
+**L'utilisation de l'API Diagral dans ce code, n'est pas officielle. Elle est le résultat d'un "Reverse" sur les appels que j'ai pu voir.
+Celle-ci pourrait ne plus fonctionner suite à un changement de Diagral.**
 
 
 # API PHP Alarme Diagral e-One

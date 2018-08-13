@@ -251,7 +251,11 @@ class Diagral_eOne{
         $this->systemState = $data["systemState"];
         $this->groups = $data["groups"];
       } else {
-        $this->showErrors("crit","ttmSessionId is not in the response. Please retry later.",$data);
+        if ($data["message"] == "transmitter.connection.badpincode") {
+          $this->showErrors("crit", "masterCode invalid. Please verify your configuration.");
+        } else {
+          $this->showErrors("crit","ttmSessionId is not in the response. Please retry later.",$data);
+        }
       }
     } else {
       $this->showErrors("crit", "Unable to get new session (http code : ".$httpRespCode.")");

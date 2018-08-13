@@ -414,7 +414,7 @@ class Diagral_eOne{
                 $this->showErrors("info", "History is in generation... Pending");
               }
   					} else {
-  						$this->showErrors("crit", "Unable to get History (generation in pending) after ".$this->eventsRetry."try. Please to to increase with calling setEventsRetry() method");
+  						$this->showErrors("crit", "Unable to get History (generation in pending) after ".$this->eventsRetry." try. Please to to increase with calling setEventsRetry() method");
   					}
   					$occurence += 1;
   				}

@@ -47,7 +47,7 @@ $MyAlarm = new  Diagral_eOne("username@email.com","MyPassword");
 
 Au besoin vous pouvez activer le mode Verbose (debug) avec la commande :
 ```
-$MyAlarm->verbose = False;
+$MyAlarm->verbose = True;
 ```
 
 ### Connexion :

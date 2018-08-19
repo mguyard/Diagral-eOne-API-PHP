@@ -965,7 +965,7 @@ class Diagral_eOne{
    * Retreive all Diagral Devices informations
    * @param  integer $maxTry Number of tentative to retreive informations
    */
-  private function getDevicesMultizone($maxTry = 10) {
+  private function getDevicesMultizone($maxTry = 100) {
     require_once('UUID.class.php');
     $v4uuid = UUID::v4();
     $GetDeviceMultizonePost = '{"systemId":"'.$this->systemId.'","centralId":"'.$this->centralId.'","transmitterId":"'.$this->transmitterId.'","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'","isVideoOptional":"true","isScenariosZoneOptional":"true","boxVersion":"1.3.0"}';
@@ -1047,6 +1047,11 @@ class Diagral_eOne{
   	$result = curl_exec($curl);
   	$httpRespCode  = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     if ($this->verbose) {
+      echo "**************************************\n";
+      echo "Request URL : ".$method." https://appv3.tt-monitor.com/topaze".$endpoint."\n";
+      if($method == "POST") {
+        echo "Post Data : ".$data."\n";
+      }
       echo "**************************************\n";
     	echo "HTTP Code : ".$httpRespCode."\n";
     	var_dump($result);

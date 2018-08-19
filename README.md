@@ -77,7 +77,7 @@ $MyAlarm->getConfiguration();
 
 On se connect en spécifiant son MasterCode :
 ```
-$MyAlarm->connect(1234);
+$MyAlarm->connect("1234");
 ```
 
 ### Connaitre l'état de son alarme :

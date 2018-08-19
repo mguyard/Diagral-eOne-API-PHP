@@ -191,12 +191,12 @@ class Diagral_eOne{
    */
   public function getConfiguration() {
     // Get Configuration Sequence
-    $GetConfPost = '{"systemId":'.$this->systems[$this->systemId]["id"].',"role":1,"sessionId":"'.$this->sessionId.'"}';
+    $GetConfPost = '{"systemId":'.$this->systems[$this->systemId]["id"].',"role":'.$this->systems[$this->systemId]["role"].',"sessionId":"'.$this->sessionId.'"}';
     if(list($data,$httpRespCode) = $this->doRequest("/configuration/getConfiguration", $GetConfPost)) {
       if(isset($data["transmitterId"],$data["centralId"])) {
         $this->transmitterId = $data["transmitterId"];
 				$this->centralId = $data["centralId"];
-        $this->systemId = $this->systems[$this->systemId]["id"];
+        //$this->systemId = $this->systems[$this->systemId]["id"];
         return $data;
       } else {
         $this->showErrors("crit","transmitterId and/or centralId is not in the response",$data);
@@ -211,21 +211,24 @@ class Diagral_eOne{
 
   /**
    * Connect to a Diagral System
-   * @param int $masterCode MasterCode use to enter in Diagral System
+   * @param string $masterCode MasterCode use to enter in Diagral System
    */
   public function connect($masterCode) {
-    if (is_int($masterCode)) {
+    if (preg_match("/^[0-9]*$/", $masterCode)) {
       $this->masterCode = $masterCode;
     } else {
       $this->showErrors("crit","masterCode isn't a integer. Need to change it in configuration.");
     }
     // Try to find a existing session
-    $FindOldSessionPost = '{"masterCode":"'.$masterCode.'","transmitterId":"'.$this->transmitterId.'","systemId":'.$this->systemId.',"role":1,"sessionId":"'.$this->sessionId.'"}';
+    $FindOldSessionPost = '{"masterCode":"'.$masterCode.'","transmitterId":"'.$this->transmitterId.'","systemId":'.$this->systems[$this->systemId]["id"].',"role":'.$this->systems[$this->systemId]["role"].',"sessionId":"'.$this->sessionId.'"}';
     if(list($data,$httpRespCode) = $this->doRequest("/authenticate/getLastTtmSessionId", $FindOldSessionPost, true)) {
       if(strlen($data) == 32) {
         // A valid session already exist. Reusing it
         $this->ttmSessionId = $data;
       } else {
+        if ($httpRespCode == 500) {
+          $this->showErrors("crit", "Error 500. Probably a bad masterCode.");
+        }
         // No valid session exist. Need to create a new session
         if ($this->verbose) {
           $this->showErrors("info","ttmSessionId and/or centralId is not in the response. Need to create a new session.",$data);
@@ -244,7 +247,7 @@ class Diagral_eOne{
    * Create a new session
    */
   private function createNewSession() {
-    $ConnectPost = '{"masterCode":"'.$this->masterCode.'","transmitterId":"'.$this->transmitterId.'","systemId":'.$this->systemId.',"role":1,"sessionId":"'.$this->sessionId.'"}';
+    $ConnectPost = '{"masterCode":"'.$this->masterCode.'","transmitterId":"'.$this->transmitterId.'","systemId":'.$this->systems[$this->systemId]["id"].',"role":1,"sessionId":"'.$this->sessionId.'"}';
     if(list($data,$httpRespCode) = $this->doRequest("/authenticate/connect", $ConnectPost)) {
       if(isset($data["ttmSessionId"])) {
         $this->ttmSessionId = $data["ttmSessionId"];
@@ -391,7 +394,7 @@ class Diagral_eOne{
     if(!isset($endDate)) {
       $endDate = date("Y-m-d H:i:s");
     }
-    $GetEventsPost = '{"systemId":"'.$this->systemId.'","centralId":"'.$this->centralId.'","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
+    $GetEventsPost = '{"systemId":"'.$this->systems[$this->systemId]["id"].'","centralId":"'.$this->centralId.'","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
     if(list($data,$httpRespCode) = $this->doRequest("/status/v2/getHistory/".$v4uuid, $GetEventsPost)) {
       $responsePending = True;
       $occurence = 0;
@@ -968,7 +971,7 @@ class Diagral_eOne{
   private function getDevicesMultizone($maxTry = 100) {
     require_once('UUID.class.php');
     $v4uuid = UUID::v4();
-    $GetDeviceMultizonePost = '{"systemId":"'.$this->systemId.'","centralId":"'.$this->centralId.'","transmitterId":"'.$this->transmitterId.'","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'","isVideoOptional":"true","isScenariosZoneOptional":"true","boxVersion":"1.3.0"}';
+    $GetDeviceMultizonePost = '{"systemId":"'.$this->systems[$this->systemId]["id"].'","centralId":"'.$this->centralId.'","transmitterId":"'.$this->transmitterId.'","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'","isVideoOptional":"true","isScenariosZoneOptional":"true","boxVersion":"1.3.0"}';
     if(list($data,$httpRespCode) = $this->doRequest("/configuration/v2/getDevicesMultizone/".$v4uuid, $GetDeviceMultizonePost)) {
       $responsePending = True;
       $occurence = 0;

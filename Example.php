@@ -30,7 +30,7 @@ $MyAlarm->login(); // On peut recuperer des information par le retour de la fonc
 $MyAlarm->getSystems(); // Recupere la liste de toutes les alarmes
 $MyAlarm->setSystemId(0); // Definit l'ID de son alarme
 $MyAlarm->getConfiguration();
-$MyAlarm->connect(1234);
+$MyAlarm->connect("1234");
 
 // Si nous n'avons pas d'information sur l'état de l'alarme (session existante), on demande les informations
 if(empty($MyAlarm->systemState)) {

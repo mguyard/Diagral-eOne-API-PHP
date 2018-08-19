@@ -196,7 +196,6 @@ class Diagral_eOne{
       if(isset($data["transmitterId"],$data["centralId"])) {
         $this->transmitterId = $data["transmitterId"];
 				$this->centralId = $data["centralId"];
-        //$this->systemId = $this->systems[$this->systemId]["id"];
         return $data;
       } else {
         $this->showErrors("crit","transmitterId and/or centralId is not in the response",$data);

@@ -201,7 +201,7 @@ class Diagral_eOne{
       if(isset($data["transmitterId"],$data["centralId"])) {
         $this->transmitterId = $data["transmitterId"];
 				$this->centralId = $data["centralId"];
-        // Verify if user (not master user) are able to manage alarm system
+        // Verify if user (not principal user) are able to manage alarm system
         if ($this->systems[$this->systemId]["role"] == 0 && !$data["rights"]["UNIVERSE_ALARMS"]) {
           $this->showErrors("crit", "This account don't have alarm rights.");
         } else {
@@ -293,7 +293,7 @@ class Diagral_eOne{
             $this->showErrors("crit", "masterCode invalid. Please verify your configuration.");
             break;
           case "transmitter.connection.sessionalreadyopen":
-            // If user is not master user, so we are unable to reuse a previous session. We need to create a new one.
+            // If user is not principal user, so we are unable to reuse a previous session. We need to create a new one.
             if ($this->systems[$this->systemId]["role"] == 1) {
               $lastTtmSessionId = $this->getLastTtmSessionId();
               $this->disconnect($lastTtmSessionId);

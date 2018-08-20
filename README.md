@@ -80,6 +80,11 @@ On se connect en spécifiant son MasterCode :
 $MyAlarm->connect("1234");
 ```
 
+On se déconnecte avec :
+```
+$MyAlarm->logout();
+```
+
 ### Connaitre l'état de son alarme :
 
 Une fois connecté, on peut récupérer l'état de l'alarme :
@@ -128,12 +133,17 @@ Pour activer partiellement l'alarme :
 $MyAlarm->partialActivation(array(1,2));
 ```
 
+Pour activer le mode MarchePresence :
+```
+$MyAlarm->presenceActivation();
+```
+
 Pour désactiver l'alarme :
 ```
 $MyAlarm->completeDesactivation();
 ```
 
-Je suis pas code à l'origine donc n'hésitez pas à me remonter tout :
+Je suis pas developpeur à l'origine donc n'hésitez pas à me remonter tout :
 * Problème de code
 * Bug
 * Demande de feature

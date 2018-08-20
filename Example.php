@@ -49,8 +49,10 @@ $Events = $MyAlarm->getEvents();
 
 // Activation de l'alarme
 //$MyAlarm->partialActivation(array(4));
+//$MyAlarm->presenceActivation();
 //$MyAlarm->completeActivation();
 $MyAlarm->completeDesactivation();
+$MyAlarm->logout();
 
 // Debug de l'ensemble des paramètres qui sont récuperé de l'alarme
-var_dump($MyAlarm);
+//var_dump($MyAlarm);

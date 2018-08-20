@@ -99,6 +99,11 @@ class Diagral_eOne{
    * @var array
    */
   private $DeviceMultizone;
+  /**
+   * MarchePresence zone list
+   * @var array
+   */
+  public $MarchePresenceZone = array();
 
 
 
@@ -233,6 +238,29 @@ class Diagral_eOne{
 
 
   /**
+   * Retreive last session ID
+   */
+  private function getLastTtmSessionId() {
+    // Try to find a existing session
+    $FindOldSessionPost = '{"systemId":'.$this->systems[$this->systemId]["id"].',"sessionId":"'.$this->sessionId.'"}';
+    if(list($data,$httpRespCode) = $this->doRequest("/authenticate/getLastTtmSessionId", $FindOldSessionPost, true)) {
+      if(strlen($data) == 32) {
+        // A valid session already exist.
+        return $data;
+      } else {
+        // No valid session exist. Need to create a new session
+        if ($this->verbose) {
+          $this->showErrors("info","ttmSessionId and/or centralId is not in the response. Need to create a new session.",$data);
+        }
+      }
+    } else {
+      $this->showErrors("crit", "Unable to request old session (http code : ".$httpRespCode.")");
+    }
+  }
+
+
+
+  /**
    * Connect to a Diagral System
    * @param string $masterCode MasterCode use to enter in Diagral System
    */
@@ -243,27 +271,7 @@ class Diagral_eOne{
     } else {
       $this->showErrors("crit","masterCode only support numbers. Need to change it in configuration.");
     }
-    // If user is not master user, so we are unable to reuse a previous session. We need to create a new one.
-    if ($this->systems[$this->systemId]["role"] == 0) {
-      $this->createNewSession();
-    } else {
-      // Try to find a existing session
-      $FindOldSessionPost = '{"masterCode":"'.$masterCode.'","transmitterId":"'.$this->transmitterId.'","systemId":'.$this->systems[$this->systemId]["id"].',"role":'.$this->systems[$this->systemId]["role"].',"sessionId":"'.$this->sessionId.'"}';
-      if(list($data,$httpRespCode) = $this->doRequest("/authenticate/getLastTtmSessionId", $FindOldSessionPost, true)) {
-        if(strlen($data) == 32) {
-          // A valid session already exist. Reusing it
-          $this->ttmSessionId = $data;
-        } else {
-          // No valid session exist. Need to create a new session
-          if ($this->verbose) {
-            $this->showErrors("info","ttmSessionId and/or centralId is not in the response. Need to create a new session.",$data);
-          }
-          $this->createNewSession();
-        }
-      } else {
-        $this->showErrors("crit", "Unable to request old session (http code : ".$httpRespCode.")");
-      }
-    }
+    $this->createNewSession();
   }
 
 
@@ -273,7 +281,7 @@ class Diagral_eOne{
    * Create a new session
    */
   private function createNewSession() {
-    $ConnectPost = '{"masterCode":"'.$this->masterCode.'","transmitterId":"'.$this->transmitterId.'","systemId":'.$this->systems[$this->systemId]["id"].',"role":1,"sessionId":"'.$this->sessionId.'"}';
+    $ConnectPost = '{"masterCode":"'.$this->masterCode.'","transmitterId":"'.$this->transmitterId.'","systemId":'.$this->systems[$this->systemId]["id"].',"role":'.$this->systems[$this->systemId]["role"].',"sessionId":"'.$this->sessionId.'"}';
     if(list($data,$httpRespCode) = $this->doRequest("/authenticate/connect", $ConnectPost)) {
       if(isset($data["ttmSessionId"])) {
         $this->ttmSessionId = $data["ttmSessionId"];
@@ -285,7 +293,14 @@ class Diagral_eOne{
             $this->showErrors("crit", "masterCode invalid. Please verify your configuration.");
             break;
           case "transmitter.connection.sessionalreadyopen":
-            $this->showErrors("crit", "Another session is already open. ".$data["details"]);
+            // If user is not master user, so we are unable to reuse a previous session. We need to create a new one.
+            if ($this->systems[$this->systemId]["role"] == 1) {
+              $lastTtmSessionId = $this->getLastTtmSessionId();
+              $this->disconnect($lastTtmSessionId);
+              $this->createNewSession();
+            } else {
+              $this->showErrors("crit", "Another session is already open. ".$data["details"]);
+            }
             break;
           default:
             $this->showErrors("crit","ttmSessionId is not in the response. Please retry later.",$data);
@@ -344,7 +359,6 @@ class Diagral_eOne{
         if ($this->verbose) {
           $this->showErrors("info", "Partial activation completed");
         }
-        //sleep(5);
       } else {
         $this->showErrors("crit", "Partial Activation Failed", $data);
       }
@@ -353,6 +367,18 @@ class Diagral_eOne{
     }
   }
 
+
+
+
+  public function presenceActivation() {
+    $this->getDevicesMultizone();
+    foreach ($this->DeviceMultizone["centralSettingsZone"]["groupesMarchePresence"] as $zone => $activation) {
+      if ($activation) {
+          array_push($this->MarchePresenceZone, $zone);
+      }
+    }
+    $this->partialActivation($this->MarchePresenceZone);
+  }
 
 
 
@@ -382,18 +408,23 @@ class Diagral_eOne{
    * Complete Alarm Desactivation
    */
     public function completeDesactivation() {
-      $CompleteDesactivationPost = '{"systemState":"off","group": [],"currentGroup":[],"nbGroups":"4","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
-      if(list($data,$httpRespCode) = $this->doRequest("/action/stateCommand", $CompleteDesactivationPost)) {
-        if(isset($data["commandStatus"]) && $data["commandStatus"] == "CMD_OK") {
-          if ($this->verbose) {
-            $this->showErrors("info", "Complete desactivation completed");
+      list($status,$zones) = $this->getAlarmStatus();
+      if ($status != "off") {
+        $CompleteDesactivationPost = '{"systemState":"off","group": [],"currentGroup":[],"nbGroups":"4","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
+        if(list($data,$httpRespCode) = $this->doRequest("/action/stateCommand", $CompleteDesactivationPost)) {
+          if(isset($data["commandStatus"]) && $data["commandStatus"] == "CMD_OK") {
+            if ($this->verbose) {
+              $this->showErrors("info", "Complete desactivation completed");
+            }
+            //sleep(5);
+          } else {
+            $this->showErrors("crit", "Complete desctivation Failed", $data);
           }
-          //sleep(5);
         } else {
-          $this->showErrors("crit", "Complete desctivation Failed", $data);
+          $this->showErrors("crit", "Unable to request Complete Alarm Desactivation (http code : ".$httpRespCode." with message ".$data["message"].")");
         }
       } else {
-        $this->showErrors("crit", "Unable to request Complete Alarm Desactivation (http code : ".$httpRespCode." with message ".$data["message"].")");
+        $this->showErrors("info", "Alarm isn't active. Unable to desactive alarm");
       }
     }
 
@@ -1032,32 +1063,45 @@ class Diagral_eOne{
 
 
   /**
-   * Logout Session
+   * Disconnect session
    */
-  public function logout() {
-    $DisconnectPost = '{"systemId":"'.$this->systems[$this->systemId]["id"].'","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
+  private function disconnect($session = null) {
+    // If disconnect isn't call for a specific session, we disconnect the actual session
+    if(!isset($session)) {
+      $session = $this->ttmSessionId;
+    }
+    $DisconnectPost = '{"systemId":"'.$this->systems[$this->systemId]["id"].'","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$session.'"}';
     if(list($data,$httpRespCode) = $this->doRequest("/authenticate/disconnect", $DisconnectPost)) {
       if(isset($data["status"]) && $data["status"] == "OK") {
         if ($this->verbose) {
           $this->showErrors("info", "Disconnect completed");
-        }
-        $LogoutPost = '{"systemId":"null","sessionId":"'.$this->sessionId.'"}';
-        if(list($data,$httpRespCode) = $this->doRequest("/authenticate/logout", $LogoutPost))  {
-          if(isset($data["status"]) && $data["status"] == "OK") {
-            if ($this->verbose) {
-              $this->showErrors("info", "Logout completed");
-            }
-          } else {
-            $this->showErrors("crit", "Logout Failed", $data);
-          }
-        } else {
-          $this->showErrors("crit", "Unable to request Logout (http code : ".$httpRespCode." with message ".$data["message"].")");
         }
       } else {
         $this->showErrors("crit", "Disconnect Failed", $data);
       }
     } else {
       $this->showErrors("crit", "Unable to request Disconnect (http code : ".$httpRespCode." with message ".$data["message"].")");
+    }
+  }
+
+
+
+  /**
+   * Logout Session
+   */
+  public function logout() {
+    $this->disconnect();
+    $LogoutPost = '{"systemId":"null","sessionId":"'.$this->sessionId.'"}';
+    if(list($data,$httpRespCode) = $this->doRequest("/authenticate/logout", $LogoutPost))  {
+      if(isset($data["status"]) && $data["status"] == "OK") {
+        if ($this->verbose) {
+          $this->showErrors("info", "Logout completed");
+        }
+      } else {
+        $this->showErrors("crit", "Logout Failed", $data);
+      }
+    } else {
+      $this->showErrors("crit", "Unable to request Logout (http code : ".$httpRespCode." with message ".$data["message"].")");
     }
   }
 

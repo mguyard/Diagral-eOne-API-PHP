@@ -196,7 +196,12 @@ class Diagral_eOne{
       if(isset($data["transmitterId"],$data["centralId"])) {
         $this->transmitterId = $data["transmitterId"];
 				$this->centralId = $data["centralId"];
-        return $data;
+        // Verify if user (not master user) are able to manage alarm system
+        if ($this->systems[$this->systemId]["role"] == 0 && !$data["rights"]["UNIVERSE_ALARMS"]) {
+          $this->showErrors("crit", "This account don't have alarm rights.");
+        } else {
+          return $data;
+        }
       } else {
         $this->showErrors("crit","transmitterId and/or centralId is not in the response",$data);
       }
@@ -216,26 +221,28 @@ class Diagral_eOne{
     if (preg_match("/^[0-9]*$/", $masterCode)) {
       $this->masterCode = $masterCode;
     } else {
-      $this->showErrors("crit","masterCode isn't a integer. Need to change it in configuration.");
+      $this->showErrors("crit","masterCode only support numbers. Need to change it in configuration.");
     }
-    // Try to find a existing session
-    $FindOldSessionPost = '{"masterCode":"'.$masterCode.'","transmitterId":"'.$this->transmitterId.'","systemId":'.$this->systems[$this->systemId]["id"].',"role":'.$this->systems[$this->systemId]["role"].',"sessionId":"'.$this->sessionId.'"}';
-    if(list($data,$httpRespCode) = $this->doRequest("/authenticate/getLastTtmSessionId", $FindOldSessionPost, true)) {
-      if(strlen($data) == 32) {
-        // A valid session already exist. Reusing it
-        $this->ttmSessionId = $data;
-      } else {
-        if ($httpRespCode == 500) {
-          $this->showErrors("crit", "Error 500. Probably a bad masterCode.");
-        }
-        // No valid session exist. Need to create a new session
-        if ($this->verbose) {
-          $this->showErrors("info","ttmSessionId and/or centralId is not in the response. Need to create a new session.",$data);
-        }
-        $this->createNewSession();
-      }
+    // If user is not master user, so we are unable to reuse a previous session. We need to create a new one.
+    if ($this->systems[$this->systemId]["role"] == 0) {
+      $this->createNewSession();
     } else {
-      $this->showErrors("crit", "Unable to request old session (http code : ".$httpRespCode.")");
+      // Try to find a existing session
+      $FindOldSessionPost = '{"masterCode":"'.$masterCode.'","transmitterId":"'.$this->transmitterId.'","systemId":'.$this->systems[$this->systemId]["id"].',"role":'.$this->systems[$this->systemId]["role"].',"sessionId":"'.$this->sessionId.'"}';
+      if(list($data,$httpRespCode) = $this->doRequest("/authenticate/getLastTtmSessionId", $FindOldSessionPost, true)) {
+        if(strlen($data) == 32) {
+          // A valid session already exist. Reusing it
+          $this->ttmSessionId = $data;
+        } else {
+          // No valid session exist. Need to create a new session
+          if ($this->verbose) {
+            $this->showErrors("info","ttmSessionId and/or centralId is not in the response. Need to create a new session.",$data);
+          }
+          $this->createNewSession();
+        }
+      } else {
+        $this->showErrors("crit", "Unable to request old session (http code : ".$httpRespCode.")");
+      }
     }
   }
 
@@ -253,10 +260,16 @@ class Diagral_eOne{
         $this->systemState = $data["systemState"];
         $this->groups = $data["groups"];
       } else {
-        if ($data["message"] == "transmitter.connection.badpincode") {
-          $this->showErrors("crit", "masterCode invalid. Please verify your configuration.");
-        } else {
-          $this->showErrors("crit","ttmSessionId is not in the response. Please retry later.",$data);
+        switch ($data["message"]) {
+          case 'transmitter.connection.badpincode':
+            $this->showErrors("crit", "masterCode invalid. Please verify your configuration.");
+            break;
+          case "transmitter.connection.sessionalreadyopen":
+            $this->showErrors("crit", "Another session is already open. ".$data["details"]);
+            break;
+          default:
+            $this->showErrors("crit","ttmSessionId is not in the response. Please retry later.",$data);
+            break;
         }
       }
     } else {

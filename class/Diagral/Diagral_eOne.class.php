@@ -212,12 +212,32 @@ class Diagral_eOne{
 
 
 
+  /**
+   * Verify if eOne is connected to Internet
+   */
+  public function isConnected() {
+    $IsConnectedPost = '{"transmitterId":"'.$this->transmitterId.'","sessionId":"'.$this->sessionId.'"}';
+    if(list($data,$httpRespCode) = $this->doRequest("/installation/isConnected", $IsConnectedPost)) {
+      if (isset($data["isConnected"]) && $data["isConnected"]) {
+        if($this->verbose) {
+          $this->showErrors("info", "eOne Status : Connected to Internet");
+        }
+      } else {
+        $this->showErrors("crit","Your eOne isn't connected to Internet");
+      }
+    } else {
+      $this->showErrors("crit", "Unable to know if eOne is connected (http code : ".$httpRespCode.")");
+    }
+  }
+
+
 
   /**
    * Connect to a Diagral System
    * @param string $masterCode MasterCode use to enter in Diagral System
    */
   public function connect($masterCode) {
+    $this->isConnected();
     if (preg_match("/^[0-9]*$/", $masterCode)) {
       $this->masterCode = $masterCode;
     } else {
@@ -1011,6 +1031,36 @@ class Diagral_eOne{
   }
 
 
+  /**
+   * Logout Session
+   */
+  public function logout() {
+    $DisconnectPost = '{"systemId":"'.$this->systems[$this->systemId]["id"].'","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
+    if(list($data,$httpRespCode) = $this->doRequest("/authenticate/disconnect", $DisconnectPost)) {
+      if(isset($data["status"]) && $data["status"] == "OK") {
+        if ($this->verbose) {
+          $this->showErrors("info", "Disconnect completed");
+        }
+        $LogoutPost = '{"systemId":"null","sessionId":"'.$this->sessionId.'"}';
+        if(list($data,$httpRespCode) = $this->doRequest("/authenticate/logout", $LogoutPost))  {
+          if(isset($data["status"]) && $data["status"] == "OK") {
+            if ($this->verbose) {
+              $this->showErrors("info", "Logout completed");
+            }
+          } else {
+            $this->showErrors("crit", "Logout Failed", $data);
+          }
+        } else {
+          $this->showErrors("crit", "Unable to request Logout (http code : ".$httpRespCode." with message ".$data["message"].")");
+        }
+      } else {
+        $this->showErrors("crit", "Disconnect Failed", $data);
+      }
+    } else {
+      $this->showErrors("crit", "Unable to request Disconnect (http code : ".$httpRespCode." with message ".$data["message"].")");
+    }
+  }
+
 
 
   /**
@@ -1041,7 +1091,7 @@ class Diagral_eOne{
    * @param  string  $method   Http method to use (GET or POST). Default is POST
    * @return array            Return a JSON content (already parsed in a array if $rawout is true)
    */
-  private function doRequest($endpoint, $data, $rawout = false, $method = "POST") {
+  private function doRequest($endpoint, $data, $rawout = False, $method = "POST") {
   	$curl = curl_init();
   	curl_setopt($curl, CURLOPT_URL, "https://appv3.tt-monitor.com/topaze".$endpoint);
   	curl_setopt($curl, CURLOPT_TIMEOUT,        15);

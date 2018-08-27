@@ -1045,7 +1045,9 @@ class Diagral_eOne{
             $this->DeviceMultizone = json_decode($data["response"],True);
           } else {
             if ($occurence < $maxTry) {
-              $this->showErrors("info", "DeviceMultizone is in generation... Pending");
+              if($this->verbose) {
+                  $this->showErrors("info", "DeviceMultizone is in generation... Pending");
+              }
             } else {
               $this->showErrors("crit", "Unable to get DeviceMultizone (generation in pending) after ".$maxTry);
             }

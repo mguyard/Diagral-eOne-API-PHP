@@ -32,5 +32,7 @@ $MyAlarm->setSystemId(0); // Definit l'ID de son alarme
 $MyAlarm->getConfiguration();
 $MyAlarm->connect("1234");
 
-$MyAlarm->completeDesactivation();
+//$MyAlarm->partialActivation(array(4));
+//$MyAlarm->presenceActivation();
+$MyAlarm->completeActivation();
 $MyAlarm->logout();

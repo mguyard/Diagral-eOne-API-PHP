@@ -1138,7 +1138,7 @@ class Diagral_eOne{
    * @return array            Return a JSON content (already parsed in a array if $rawout is true)
    */
   private function doRequest($endpoint, $data, $rawout = False, $method = "POST") {
-  	$curl = curl_init();
+    $curl = curl_init();
   	curl_setopt($curl, CURLOPT_URL, "https://appv3.tt-monitor.com/topaze".$endpoint);
   	curl_setopt($curl, CURLOPT_TIMEOUT,        15);
   	curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 15);
@@ -1146,11 +1146,12 @@ class Diagral_eOne{
   	curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
   	curl_setopt($curl, CURLOPT_POSTFIELDS,     $data);
   	curl_setopt($curl, CURLOPT_HTTPHEADER, array(
-  		"User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 10_2 like Mac OS X) AppleWebKit/602.3.12 (KHTML, like Gecko) Version/10.0 Mobile/14C92 Safari/602.1",
+  		"User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 12_0_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/16A404",
   		"Accept: application/json, text/plain, */*",
   		"Accept-Encoding: deflate",
-  		"X-App-Version: 1.5.0",
+  		"X-App-Version: 1.5.3",
   		"X-Vendor: diagral",
+      "X-SessionId: ".$this->sessionId,
   		"Content-Type: application/json;charset=UTF-8",
   		"Content-Length: ".strlen($data),
   		"Connection: Close",

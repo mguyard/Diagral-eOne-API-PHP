@@ -371,13 +371,18 @@ class Diagral_eOne{
 
 
   public function presenceActivation() {
-    $this->getDevicesMultizone();
-    foreach ($this->DeviceMultizone["centralSettingsZone"]["groupesMarchePresence"] as $zone => $activation) {
-      if ($activation) {
-          array_push($this->MarchePresenceZone, $zone);
+    $presenceActivationPost = '{"systemState":"presence","group": [],"currentGroup":[],"nbGroups":"4","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
+    if(list($data,$httpRespCode) = $this->doRequest("/action/stateCommand", $presenceActivationPost)) {
+      if(isset($data["commandStatus"]) && $data["commandStatus"] == "CMD_OK") {
+        if ($this->verbose) {
+          $this->showErrors("info", "Presence activation completed");
+        }
+      } else {
+        $this->showErrors("crit", "Presence Activation Failed", $data);
       }
+    } else {
+      $this->showErrors("crit", "Unable to request Presence Alarm Activation (http code : ".$httpRespCode." with message ".$data["message"].")");
     }
-    $this->partialActivation($this->MarchePresenceZone);
   }
 
 

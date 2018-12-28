@@ -99,7 +99,7 @@ $GroupsName = $MyAlarm->getGroupsName($MyAlarm->groups);
 ```
 *Ainsi $GroupsName est un tableau contenu les listes des groupes actif en se basant sur ce qui est présent dans $MyAlarm->groups*
 
-*Liste des états possibles :
+*Liste des états possibles :*
 * off => alarme désactivé
 * group => alarme active (voir la liste des groupes actifs)
 * presence => alarme en mode présence

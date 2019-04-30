@@ -154,7 +154,7 @@ class Diagral_eOne{
    */
   public function getSystems() {
     // Get System Sequence
-    $GetSystemPost = '{"sessionId":"'.$this->sessionId.'"}';
+    $GetSystemPost = '{}';
     if(list($data,$httpRespCode) = $this->doRequest("/configuration/getSystems", $GetSystemPost)) {
       if(isset($data["diagralId"])) {
         $this->diagralId = $data["diagralId"];
@@ -196,7 +196,7 @@ class Diagral_eOne{
    */
   public function getConfiguration() {
     // Get Configuration Sequence
-    $GetConfPost = '{"systemId":'.$this->systems[$this->systemId]["id"].',"role":'.$this->systems[$this->systemId]["role"].',"sessionId":"'.$this->sessionId.'"}';
+    $GetConfPost = '{"systemId":'.$this->systems[$this->systemId]["id"].',"role":'.$this->systems[$this->systemId]["role"].'}';
     if(list($data,$httpRespCode) = $this->doRequest("/configuration/getConfiguration", $GetConfPost)) {
       if(isset($data["transmitterId"],$data["centralId"])) {
         $this->transmitterId = $data["transmitterId"];
@@ -221,7 +221,7 @@ class Diagral_eOne{
    * Verify if eOne is connected to Internet
    */
   public function isConnected() {
-    $IsConnectedPost = '{"transmitterId":"'.$this->transmitterId.'","sessionId":"'.$this->sessionId.'"}';
+    $IsConnectedPost = '{"transmitterId":"'.$this->transmitterId.'"}';
     if(list($data,$httpRespCode) = $this->doRequest("/installation/isConnected", $IsConnectedPost)) {
       if (isset($data["isConnected"]) && $data["isConnected"]) {
         if($this->verbose) {
@@ -242,7 +242,7 @@ class Diagral_eOne{
    */
   private function getLastTtmSessionId() {
     // Try to find a existing session
-    $FindOldSessionPost = '{"systemId":'.$this->systems[$this->systemId]["id"].',"sessionId":"'.$this->sessionId.'"}';
+    $FindOldSessionPost = '{"systemId":'.$this->systems[$this->systemId]["id"].'}';
     if(list($data,$httpRespCode) = $this->doRequest("/authenticate/getLastTtmSessionId", $FindOldSessionPost, true)) {
       if(strlen($data) == 32) {
         // A valid session already exist.
@@ -281,7 +281,7 @@ class Diagral_eOne{
    * Create a new session
    */
   private function createNewSession() {
-    $ConnectPost = '{"masterCode":"'.$this->masterCode.'","transmitterId":"'.$this->transmitterId.'","systemId":'.$this->systems[$this->systemId]["id"].',"role":'.$this->systems[$this->systemId]["role"].',"sessionId":"'.$this->sessionId.'"}';
+    $ConnectPost = '{"masterCode":"'.$this->masterCode.'","transmitterId":"'.$this->transmitterId.'","systemId":'.$this->systems[$this->systemId]["id"].',"role":'.$this->systems[$this->systemId]["role"].'}';
     if(list($data,$httpRespCode) = $this->doRequest("/authenticate/connect", $ConnectPost)) {
       if(isset($data["ttmSessionId"])) {
         $this->ttmSessionId = $data["ttmSessionId"];
@@ -320,7 +320,7 @@ class Diagral_eOne{
    * @return array Array who contain system state and activate groups
    */
   public function getAlarmStatus() {
-    $GetAlarmStatusPost = '{"sessionId":"'.$this->sessionId.'","centralId":"'.$this->centralId.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
+    $GetAlarmStatusPost = '{"centralId":"'.$this->centralId.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
     if(list($data,$httpRespCode) = $this->doRequest("/status/getSystemState", $GetAlarmStatusPost)) {
       if(isset($data["systemState"])) {
         $this->systemState = $data["systemState"];
@@ -353,7 +353,7 @@ class Diagral_eOne{
    */
   public function partialActivation($groups) {
     $groups = implode(",", $groups);
-    $partialActivationPost = '{"systemState":"group","group": ['.$groups.'],"currentGroup":[],"nbGroups":"4","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
+    $partialActivationPost = '{"systemState":"group","group": ['.$groups.'],"currentGroup":[],"nbGroups":"4","ttmSessionId":"'.$this->ttmSessionId.'"}';
     if(list($data,$httpRespCode) = $this->doRequest("/action/stateCommand", $partialActivationPost)) {
       if(isset($data["commandStatus"]) && $data["commandStatus"] == "CMD_OK") {
         if ($this->verbose) {
@@ -371,18 +371,13 @@ class Diagral_eOne{
 
 
   public function presenceActivation() {
-    $presenceActivationPost = '{"systemState":"presence","group": [],"currentGroup":[],"nbGroups":"4","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
-    if(list($data,$httpRespCode) = $this->doRequest("/action/stateCommand", $presenceActivationPost)) {
-      if(isset($data["commandStatus"]) && $data["commandStatus"] == "CMD_OK") {
-        if ($this->verbose) {
-          $this->showErrors("info", "Presence activation completed");
-        }
-      } else {
-        $this->showErrors("crit", "Presence Activation Failed", $data);
+    $this->getDevicesMultizone();
+    foreach ($this->DeviceMultizone["centralSettingsZone"]["groupesMarchePresence"] as $zone => $activation) {
+      if ($activation) {
+          array_push($this->MarchePresenceZone, $zone);
       }
-    } else {
-      $this->showErrors("crit", "Unable to request Presence Alarm Activation (http code : ".$httpRespCode." with message ".$data["message"].")");
     }
+    $this->partialActivation($this->MarchePresenceZone);
   }
 
 
@@ -391,7 +386,7 @@ class Diagral_eOne{
    * Complete Alarm Activation
    */
     public function completeActivation() {
-      $CompleteActivationPost = '{"systemState":"on","group": [],"currentGroup":[],"nbGroups":"4","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
+      $CompleteActivationPost = '{"systemState":"on","group": [],"currentGroup":[],"nbGroups":"4","ttmSessionId":"'.$this->ttmSessionId.'"}';
       if(list($data,$httpRespCode) = $this->doRequest("/action/stateCommand", $CompleteActivationPost)) {
         if(isset($data["commandStatus"]) && $data["commandStatus"] == "CMD_OK") {
           if ($this->verbose) {
@@ -415,7 +410,7 @@ class Diagral_eOne{
     public function completeDesactivation() {
       list($status,$zones) = $this->getAlarmStatus();
       if ($status != "off") {
-        $CompleteDesactivationPost = '{"systemState":"off","group": [],"currentGroup":[],"nbGroups":"4","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
+        $CompleteDesactivationPost = '{"systemState":"off","group": [],"currentGroup":[],"nbGroups":"4","ttmSessionId":"'.$this->ttmSessionId.'"}';
         if(list($data,$httpRespCode) = $this->doRequest("/action/stateCommand", $CompleteDesactivationPost)) {
           if(isset($data["commandStatus"]) && $data["commandStatus"] == "CMD_OK") {
             if ($this->verbose) {
@@ -462,7 +457,7 @@ class Diagral_eOne{
     if(!isset($endDate)) {
       $endDate = date("Y-m-d H:i:s");
     }
-    $GetEventsPost = '{"systemId":"'.$this->systems[$this->systemId]["id"].'","centralId":"'.$this->centralId.'","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
+    $GetEventsPost = '{"systemId":"'.$this->systems[$this->systemId]["id"].'","centralId":"'.$this->centralId.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
     if(list($data,$httpRespCode) = $this->doRequest("/status/v2/getHistory/".$v4uuid, $GetEventsPost)) {
       $responsePending = True;
       $occurence = 0;
@@ -1039,7 +1034,7 @@ class Diagral_eOne{
   private function getDevicesMultizone($maxTry = 100) {
     require_once('UUID.class.php');
     $v4uuid = UUID::v4();
-    $GetDeviceMultizonePost = '{"systemId":"'.$this->systems[$this->systemId]["id"].'","centralId":"'.$this->centralId.'","transmitterId":"'.$this->transmitterId.'","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$this->ttmSessionId.'","isVideoOptional":"true","isScenariosZoneOptional":"true","boxVersion":"1.3.0"}';
+    $GetDeviceMultizonePost = '{"systemId":"'.$this->systems[$this->systemId]["id"].'","centralId":"'.$this->centralId.'","transmitterId":"'.$this->transmitterId.'","ttmSessionId":"'.$this->ttmSessionId.'","isVideoOptional":"true","isScenariosZoneOptional":"true","boxVersion":"1.4.0"}';
     if(list($data,$httpRespCode) = $this->doRequest("/configuration/v2/getDevicesMultizone/".$v4uuid, $GetDeviceMultizonePost)) {
       $responsePending = True;
       $occurence = 0;
@@ -1077,7 +1072,7 @@ class Diagral_eOne{
     if(!isset($session)) {
       $session = $this->ttmSessionId;
     }
-    $DisconnectPost = '{"systemId":"'.$this->systems[$this->systemId]["id"].'","sessionId":"'.$this->sessionId.'","ttmSessionId":"'.$session.'"}';
+    $DisconnectPost = '{"systemId":"'.$this->systems[$this->systemId]["id"].'","ttmSessionId":"'.$session.'"}';
     if(list($data,$httpRespCode) = $this->doRequest("/authenticate/disconnect", $DisconnectPost)) {
       if(isset($data["status"]) && $data["status"] == "OK") {
         if ($this->verbose) {
@@ -1098,7 +1093,7 @@ class Diagral_eOne{
    */
   public function logout() {
     $this->disconnect();
-    $LogoutPost = '{"systemId":"null","sessionId":"'.$this->sessionId.'"}';
+    $LogoutPost = '{"systemId":"null"}';
     if(list($data,$httpRespCode) = $this->doRequest("/authenticate/logout", $LogoutPost))  {
       if(isset($data["status"]) && $data["status"] == "OK") {
         if ($this->verbose) {
@@ -1144,28 +1139,41 @@ class Diagral_eOne{
    */
   private function doRequest($endpoint, $data, $rawout = False, $method = "POST") {
     $curl = curl_init();
+    	$curl_headers = array(
+  		"User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+  		"Accept: application/json, text/plain, */*",
+  		"Accept-Encoding: deflate",
+      "X-App-Version: 1.9.1",
+      "X-Identity-Provider: JANRAIN",
+      "ttmSessionIdNotRequired: true",
+  		"X-Vendor: diagral",
+  		"Content-Type: application/json;charset=UTF-8",
+  		"Content-Length: ".strlen($data),
+  		"Connection: Close",
+	  );
+    if ($endpoint != "/authenticate/login") {
+        $addon = array(
+          "Authorization: Bearer ".$this->sessionId,
+          "X-Identity-Provider: JANRAIN",
+          "ttmSessionIdNotRequired: true",
+        );
+        foreach ($addon as $header_to_add) {
+          array_push($curl_headers, $header_to_add);
+        }
+    }
   	curl_setopt($curl, CURLOPT_URL, "https://appv3.tt-monitor.com/topaze".$endpoint);
   	curl_setopt($curl, CURLOPT_TIMEOUT,        15);
   	curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 15);
   	curl_setopt($curl, CURLOPT_CUSTOMREQUEST,  $method);
   	curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
   	curl_setopt($curl, CURLOPT_POSTFIELDS,     $data);
-  	curl_setopt($curl, CURLOPT_HTTPHEADER, array(
-  		"User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 12_0_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/16A404",
-  		"Accept: application/json, text/plain, */*",
-  		"Accept-Encoding: deflate",
-  		"X-App-Version: 1.5.3",
-  		"X-Vendor: diagral",
-      "X-SessionId: ".$this->sessionId,
-  		"Content-Type: application/json;charset=UTF-8",
-  		"Content-Length: ".strlen($data),
-  		"Connection: Close",
-  	));
+  	curl_setopt($curl, CURLOPT_HTTPHEADER, $curl_headers);
   	$result = curl_exec($curl);
   	$httpRespCode  = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     if ($this->verbose) {
       echo "**************************************\n";
       echo "Request URL : ".$method." https://appv3.tt-monitor.com/topaze".$endpoint."\n";
+      print_r($curl_headers);
       if($method == "POST") {
         echo "Post Data : ".$data."\n";
       }
@@ -1183,5 +1191,4 @@ class Diagral_eOne{
   		return array(json_decode($result, true),$httpRespCode);
   	}
   }
-
 }

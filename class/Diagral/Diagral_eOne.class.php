@@ -1064,6 +1064,64 @@ class Diagral_eOne{
   }
 
 
+
+  /**
+   * Get Scenarios
+   * @param  string $search Search Filter to find match scenarios (based on name)
+   * @return array Array who contain scenarios list
+   */
+  public function getScenarios($search = "") {
+    // If DeviceMultizone don't exist yet, we launch function to retreive content values
+    if(!isset($this->DeviceMultizone["boxScenariosZone"])) {
+      $this->getDevicesMultizone();
+    }
+    // Create table with scenarios informations (filtered informations)
+    foreach ($this->DeviceMultizone["boxScenariosZone"] as $scenarioType => $scenarios) {
+      if(is_array($scenarios)) {
+        foreach ($scenarios as $scenario) {
+          $scenarioContent = array(
+            "scenarioGroup" => $scenarioType,
+            "type" => $scenario["type"],
+            "isActive" => $scenario["isActive"],
+            "id" => $scenario["id"]
+          );
+          // If search parameters, filtering on content
+          if (!empty($search)) {
+            if (preg_match("/".$search."/", $scenario["name"])) {
+              $scenarioList[$scenario["name"]][] = $scenarioContent;
+            }
+          } else {
+            $scenarioList[$scenario["name"]][] = $scenarioContent;
+          }
+        }
+      }
+    }
+    return $scenarioList;
+  }
+
+
+
+  /**
+   * Launch Scenario
+   * @param integer $id Launch scenario with this id
+   */
+  public function launchScenario($id) {
+    $launchScenarioPost = '{"scenarioId":"'.$id.'","ttmSessionId":"'.$this->ttmSessionId.'"}';
+    if(list($data,$httpRespCode) = $this->doRequest("/api/scenarios/launch", $launchScenarioPost)) {
+      if(isset($data[0]) && $data[0] == "CMD_OK") {
+        if($this->verbose) {
+          $this->showErrors("info", "Scenario executed with success");
+        }
+      } else {
+        $this->showErrors("crit","Scenario failed to execute", $data);
+      }
+    } else {
+      $this->showErrors("crit", "Unable to execute this scenario (http code : ".$httpRespCode.")");
+    }
+  }
+
+
+
   /**
    * Disconnect session
    */

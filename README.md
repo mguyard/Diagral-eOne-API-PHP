@@ -149,6 +149,28 @@ Pour désactiver l'alarme :
 $MyAlarm->completeDesactivation();
 ```
 
+### Recuperation/Lancement des scénarios
+
+Pour récuperer les scénarios :
+```
+$MyAlarm->getScenarios();
+```
+
+Pour récuperer les scénarios (filtré par le nom - insensible à la casse) :
+```
+$MyAlarm->getScenarios("Test");
+```
+
+Pour récuperer les scénarios (filtré par le nom - insensible à la casse) :
+```
+$MyAlarm->getScenarios(".*Test.*");
+```
+
+Pour lancer un scénarios (le paramètre correspond à l'ID du scenario) :
+```
+$MyAlarm->launchScenario(1);
+```
+
 Je suis pas developpeur à l'origine donc n'hésitez pas à me remonter tout :
 * Problème de code
 * Bug

@@ -4,6 +4,7 @@
  * This file is part of the Diagral-eOne-API-PHP distribution (https://github.com/mguyard/Diagral-eOne-API-PHP).
  * Copyright (c) 2018 Marc GUYARD (https://github.com/mguyard).
  * Version : 0.1
+ * $Id$
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

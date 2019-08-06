@@ -254,8 +254,7 @@ class Diagral_eOne{
                         $this->addVerboseEvent("DEBUG", "eOne Status : Connected to Internet");
                     }
                 } else {
-                    throw new \Exception("Your eOne isn't connected to Internet", 11);
-                }
+                    throw new \Exception("Your eOne isn't connected to Internet -- " . json_encode($data), 11);                }
             } else {
                 throw new \Exception("Unable to know if eOne is connected (http code : ".$httpRespCode.")", 19);
             }

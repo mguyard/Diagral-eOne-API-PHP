@@ -1127,6 +1127,25 @@ class Diagral_eOne{
     }
 
 
+    /**
+     * Retreive all groups with Id and Name
+     * @return array Array of All Diagral Group Names
+     */
+    public function getAllGroups() {
+        if(!isset($this->DeviceMultizone["centralLearningZone"]["groupNames"])) {
+            try {
+                $this->getDevicesMultizone();
+            } catch (Exception $e) {
+                throw $e;
+            }
+        }
+        $nbGroups = $this->DeviceMultizone["centralSettingsZone"]["nbGroups"];
+        $allGroups = $this->DeviceMultizone["centralLearningZone"]["groupNames"];
+        array_splice($allGroups,$nbGroups);
+        return $allGroups;
+    }
+
+
 
 
     /**

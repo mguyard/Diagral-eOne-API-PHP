@@ -303,6 +303,10 @@ class Diagral_eOne{
         } catch (Exception $e) {
             throw $e;
         }
+        if (empty($masterCode)) {
+            throw new \Exception("MasterCode cannot be empty", 41);
+
+        }
         if (preg_match("/^[0-9]*$/", $masterCode)) {
             $this->masterCode = $masterCode;
         } else {

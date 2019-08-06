@@ -22,17 +22,22 @@
 require_once 'class/Diagral/Diagral_eOne.class.php';
 use \Mguyard\Diagral\Diagral_eOne;
 
-// Instanciation de mon objet Alarm
-$MyAlarm = new  Diagral_eOne("username@email.com","MyPassword");
-// Activation/Désactivation du mode verbose
-$MyAlarm->verbose = False;
-$MyAlarm->login(); // On peut recuperer des information par le retour de la fonction
-$MyAlarm->getSystems(); // Recupere la liste de toutes les alarmes
-$MyAlarm->setSystemId(0); // Definit l'ID de son alarme
-$MyAlarm->getConfiguration();
-$MyAlarm->connect("1234");
+try {
+    // Instanciation de mon objet Alarm
+    $MyAlarm = new  Diagral_eOne("username@email.com","MyPassword");
+    // Activation/Désactivation du mode verbose
+    $MyAlarm->verbose = False;
+    $MyAlarm->login(); // On peut recuperer des information par le retour de la fonction
+    $MyAlarm->getSystems(); // Recupere la liste de toutes les alarmes
+    $MyAlarm->setSystemId(0); // Definit l'ID de son alarme
+    $MyAlarm->getConfiguration();
+    $MyAlarm->connect("1234");
 
-//$MyAlarm->partialActivation(array(4));
-//$MyAlarm->presenceActivation();
-$MyAlarm->completeActivation();
-$MyAlarm->logout();
+    //$MyAlarm->partialActivation(array(4));
+    //$MyAlarm->presenceActivation();
+    $MyAlarm->completeActivation();
+    $MyAlarm->logout();
+} catch (Exception $e) {
+    echo "Exception Message : ".$e->getMessage();
+    exit($e->getCode());
+}

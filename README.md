@@ -19,6 +19,7 @@ Celle-ci pourrait ne plus fonctionner suite à un changement de Diagral.**
   - [Activation/Désactivation de l'alarme](#activationdésactivation-de-lalarme)
   - [Recuperation/Lancement des scénarios](#recuperationlancement-des-scénarios)
   - [Gestion des erreurs](#gestion-des-erreurs)
+- [Participatif](#participatif)
 
 # Comment me contacter ? <!-- omit in toc -->
 
@@ -117,6 +118,7 @@ Liste des états possibles :
 * off => alarme désactivé
 * group => alarme active (voir la liste des groupes actifs)
 * presence => alarme en mode présence
+* tempogroup => phase de temporisation avant activation
 ```
 
 ### Evènements :
@@ -184,12 +186,6 @@ Pour lancer un scénarios (le paramètre correspond à l'ID du scenario) :
 $MyAlarm->launchScenario(1);
 ```
 
-Je suis pas developpeur à l'origine donc n'hésitez pas à me remonter tout :
-* Problème de code
-* Bug
-* Demande de feature
-au travers de Github
-
 ### Gestion des erreurs
 
 Vous pouvez récupérer les erreurs API avec les try/catch
@@ -210,3 +206,11 @@ try {
     exit($e->getCode());
 }
 ```
+
+## Participatif
+
+Je suis pas developpeur à l'origine donc n'hésitez pas à me remonter tout :
+* Problème de code
+* Bug
+* Demande de feature
+au travers de Github

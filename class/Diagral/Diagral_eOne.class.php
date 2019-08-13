@@ -98,6 +98,18 @@ class Diagral_eOne{
      */
     public $groups;
     /**
+     * doRequestRetry define how many time POST/GET requests to Diagral will be attempts
+     * Default : 1
+     * @var int
+     */
+    public $doRequestAttempts;
+    /**
+     * waitBetweenAttempts is number of seconds between attempts
+     * Default : 5
+     * @var int
+     */
+    public $waitBetweenAttempts;
+    /**
      * eventsRetry retreive by setEventsRetry() method.
      * Default : 100
      * @var int
@@ -128,6 +140,8 @@ class Diagral_eOne{
         $this->username = $username;
         $this->password = $password;
         $this->eventsRetry = 100;
+        $this->doRequestAttempts = 1;
+        $this->waitBetweenAttempts = 5;
         $this->MarchePresenceZone = array();
         $this->verboseEvent = array();
     }
@@ -1356,9 +1370,12 @@ class Diagral_eOne{
      * @param  string  $data     POST data in JSON format
      * @param  boolean $rawout   Define if you want to receive result in json or already parsed
      * @param  string  $method   Http method to use (GET or POST). Default is POST
+     * @param  int     $retry    Number of retry if Diagral Cloud don't reply
      * @return array            Return a JSON content (already parsed in a array if $rawout is true)
      */
-    private function doRequest($endpoint, $data, $rawout = False, $method = "POST") {
+    private function doRequest($endpoint, $data, $rawout = False, $method = "POST", $retry = null) {
+        // If retry isn't define in function parameters, we using doRequestAttempts value minus 1
+        $retry = isset($retry) ? $retry : $this->doRequestAttempts - 1;
         $curl = curl_init();
         $curl_headers = array(
             "User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
@@ -1405,8 +1422,17 @@ class Diagral_eOne{
             $this->addVerboseEvent("DEBUG", $curl_verboseEvent);
         }
         curl_close($curl);
+        // If Diagral Cloud don't reply (internet issue or Cloud issue)
         if($httpRespCode == 0) {
-            throw new \Exception("Unable to connect to Diagral Cloud. Please verify your internet connection and/or retry later.", 10);
+            while ($retry > 0) {
+                --$retry;
+                sleep($this->waitBetweenAttempts);
+                $this->addVerboseEvent("DEBUG", "Diagral doRequest remain " . $retry . " attempts");
+                $this->doRequest($endpoint, $data, $rawout, $method, $retry);
+            }
+            if ($retry == 0) {
+                throw new \Exception("Unable to connect to Diagral Cloud after " . $this->doRequestAttempts . " attempts. Please verify your internet connection and/or retry later.", 10);
+            }
         }
         if($rawout == true) {
             return array($result,$httpRespCode);
@@ -1414,4 +1440,4 @@ class Diagral_eOne{
             return array(json_decode($result, true),$httpRespCode);
         }
     }
-    }
+}

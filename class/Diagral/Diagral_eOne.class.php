@@ -98,6 +98,11 @@ class Diagral_eOne{
      */
     public $groups;
     /**
+     * Contain actual software versions
+     * @var array
+     */
+    private $versions;
+    /**
      * doRequestRetry define how many time POST/GET requests to Diagral will be attempts
      * Default : 1
      * @var int
@@ -346,6 +351,7 @@ class Diagral_eOne{
                     $this->ttmSessionId = $data["ttmSessionId"];
                     $this->systemState = $data["systemState"];
                     $this->groups = $data["groups"];
+                    $this->versions = $data["versions"];
                 } else {
                     switch ($data["message"]) {
                     case 'transmitter.connection.badpincode':
@@ -382,7 +388,39 @@ class Diagral_eOne{
         }
     }
 
+    /**
+     * Verify if firmware update is need
+     * @return int
+     */
+    public function getFirmwareUpdates() {
+        $GetFirmwareUpdatesStatusPost = '{"currentVersions":{"BOX":"'.$this->versions["box"].'","BOXRADIO":"'.$this->versions["boxRadio"].'","PLUGKNX":"'.$this->versions["plugKnx"].'","CENTRAL":"'.$this->versions["central"].'","CENTRALRADIO":"'.$this->versions["centralRadio"].'"},"systemId":"'.$this->systems[$this->systemId]["id"].'","ttmSessionId":"'.$this->ttmSessionId.'"}';
+        try {
+            if(list($data,$httpRespCode) = $this->doRequest("/api/applications/latest/version", "", FALSE, "GET")) {
+                if($httpRespCode != "200") {
+                    if ($this->verbose) {
+                        $this->addVerboseEvent("WARNING", "version is not in the response\n" . var_dump($data));
+                    }
+                } else {
+                    if(list($data,$httpRespCode) = $this->doRequest("/configuration/getFirmwareUpdates", $GetFirmwareUpdatesStatusPost)) {
+                        if(isset($data["totalUpdates"])) {
+                            return intval($data["totalUpdates"]);
+                        } else {
+                            if ($this->verbose) {
+                                $this->addVerboseEvent("WARNING", "totalUpdates is not in the response\n" . var_dump($data));
+                            }
+                        }
+                    } else {
+                        throw new \Exception("Unable to request Firmware Update Status (http code : ".$httpRespCode." with message ".$data["message"].")", 19);
+                    }
+                }
+            } else {
+                throw new \Exception("Unable to request Firmware Update Status (http code : ".$httpRespCode." with message ".$data["message"].")", 19);
+            }
 
+        } catch (Exception $e) {
+            throw $e;
+        }
+    }
 
 
     /**
@@ -448,6 +486,51 @@ class Diagral_eOne{
             throw $e;
         }
     }
+
+
+
+    /**
+     * Partial Desactivation
+     * @param int $group GroupID to desactivate
+     */
+    public function partialDesactivation($group) {
+        try {
+            list($systemState,$groups) = $this->getAlarmStatus();
+            if (in_array($systemState, array('group', 'tempogroup'))) { // If alarm is in group or tempogroup status (don't work with presence or off)
+                if (count($groups) > 1) { // If activated group greater than 1 (if only one group so we need to totalDesactivation)
+                    $actualGroups = implode(",", $groups);
+                    if (($groupkey = array_search($group, $groups)) !== false) {
+                        unset($groups[$groupkey]); // We removing group from groups array
+                    }
+                    $newgroups = implode(",", $groups);
+                    $partialDesactivationPost = '{"systemState":"group","group": ['.$newgroups.'],"currentGroup":['.$actualGroups.'],"nbGroups":"4","ttmSessionId":"'.$this->ttmSessionId.'"}';
+                    $this->addVerboseEvent("DEBUG", "Partial Desactivation ".$partialDesactivationPost);
+                    if(list($data,$httpRespCode) = $this->doRequest("/action/stateCommand", $partialDesactivationPost)) {
+                        if(isset($data["commandStatus"]) && $data["commandStatus"] == "CMD_OK") {
+                            if ($this->verbose) {
+                                $this->addVerboseEvent("DEBUG", "Partial desactivation completed");
+                            }
+                        } else {
+                            throw new \Exception("Partial Desactivation Failed " . json_encode($data), 57);
+                        }
+                    }
+                } else {
+                    $groups = implode(",", $groups);
+                    if ($groups == $group) {
+                        if ($this->verbose) {
+                            $this->addVerboseEvent("DEBUG", "Partial Desactivation : Only one group is activated. The same was request to desactivated. Total desactivation launch...");
+                        }
+                        $this->completeDesactivation();
+                    }
+                }
+            } else {
+                throw new \Exception("Unable to request Partial Alarm Desactivation as alarm is in ".$systemState." status", 80);
+            }
+        } catch (Exception $e) {
+            throw $e;
+        }
+    }
+
 
 
 
@@ -1169,7 +1252,7 @@ class Diagral_eOne{
     private function getDevicesMultizone($maxTry = 100) {
         require_once('UUID.class.php');
         $v4uuid = UUID::v4();
-        $GetDeviceMultizonePost = '{"systemId":"'.$this->systems[$this->systemId]["id"].'","centralId":"'.$this->centralId.'","transmitterId":"'.$this->transmitterId.'","ttmSessionId":"'.$this->ttmSessionId.'","isVideoOptional":"true","isScenariosZoneOptional":"true","boxVersion":"1.4.0"}';
+        $GetDeviceMultizonePost = '{"systemId":"'.$this->systems[$this->systemId]["id"].'","centralId":"'.$this->centralId.'","transmitterId":"'.$this->transmitterId.'","ttmSessionId":"'.$this->ttmSessionId.'","isVideoOptional":"true","isScenariosZoneOptional":"true","boxVersion":"'.$this->versions["box"].'"}';
         try {
             if(list($data,$httpRespCode) = $this->doRequest("/configuration/v2/getDevicesMultizone/".$v4uuid, $GetDeviceMultizonePost)) {
                 $responsePending = True;
@@ -1179,6 +1262,8 @@ class Diagral_eOne{
                         if(isset($data["status"]) && $data["status"] == "request_status_done") {
                             $responsePending = False;
                             $this->DeviceMultizone = json_decode($data["response"],True);
+                            // Insert Central and CentralRadio versions in versions array
+                            $this->versions = array_merge($this->versions, $this->DeviceMultizone["factoryZone"]["versions"]);
                         } else {
                             if ($occurence < $maxTry) {
                                 if($this->verbose) {
@@ -1381,7 +1466,7 @@ class Diagral_eOne{
             "User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
             "Accept: application/json, text/plain, */*",
             "Accept-Encoding: deflate",
-            "X-App-Version: 1.9.1",
+            "X-App-Version: 1.10.1",
             "X-Identity-Provider: JANRAIN",
             "ttmSessionIdNotRequired: true",
             "X-Vendor: diagral",

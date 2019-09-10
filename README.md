@@ -176,6 +176,11 @@ Pour désactiver l'alarme :
 $MyAlarm->completeDesactivation();
 ```
 
+Pour désactiver une seul zone de l'alarme activé:
+```
+$MyAlarm->partialDesactivation(2);
+```
+
 ### Recuperation/Lancement des scénarios
 
 Pour récuperer les scénarios :

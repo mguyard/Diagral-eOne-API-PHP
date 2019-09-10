@@ -2,33 +2,48 @@
 ![Last Commit](https://badgen.net/github/last-commit/mguyard/Diagral-eOne-API-PHP)
 ![Open Issues](https://badgen.net/github/open-issues/mguyard/Diagral-eOne-API-PHP) ![Open Issues](https://badgen.net/github/open-prs/mguyard/Diagral-eOne-API-PHP)
 
-# Comment me contacter ?
 
-[![Twitter](https://badgen.net/badge/Twitter/mguyard/cyan?icon=twitter)](https://twitter.com/mguyard)
-
-
-# /!\ Attention :
+# /!\ Attention : <!-- omit in toc -->
 
 **L'utilisation de l'API Diagral dans ce code, n'est pas officielle. Elle est le résultat d'un "Reverse" sur les appels que j'ai pu voir.
 Celle-ci pourrait ne plus fonctionner suite à un changement de Diagral.**
 
+- [Commencez par cloner le repo](#commencez-par-cloner-le-repo)
+- [Puis faites votre propre code](#puis-faites-votre-propre-code)
+  - [Chargement des classes](#chargement-des-classes)
+  - [Instanciation](#instanciation)
+  - [Verbose](#verbose)
+  - [Retry](#retry)
+  - [Connexion](#connexion)
+  - [Connaitre l'état de son alarme](#connaitre-létat-de-son-alarme)
+  - [Evènements](#evènements)
+  - [Activation/Désactivation de l'alarme](#activationdésactivation-de-lalarme)
+  - [Recuperation/Lancement des scénarios](#recuperationlancement-des-scénarios)
+  - [Gestion des erreurs](#gestion-des-erreurs)
+- [Participatif](#participatif)
 
-# API PHP Alarme Diagral e-One
+# Comment me contacter ? <!-- omit in toc -->
+
+[![Twitter](https://badgen.net/badge/Twitter/mguyard/cyan?icon=twitter)](https://twitter.com/mguyard)
+
+
+
+# API PHP Alarme Diagral e-One <!-- omit in toc -->
 
 Voici quelques lignes pour donner les exemples de démarrage de l'utilisation de l'API PHP Diagral e-One :
 Une fichier [Example.php](/mguyard/Diagral-eOne-API-PHP/blob/master/Example.php) est présent dans le repos pour commencer très rapidement.
 
 
-## Commencez par cloner le repo :
+## Commencez par cloner le repo
 
 ```
 # git clone https://github.com/mguyard/Diagral-eOne-API-PHP.git
 ```
 
-## Puis faites votre propre code :
+## Puis faites votre propre code
 
 
-### Chargement des classes :
+### Chargement des classes
 
 Il faut commencer par charger les classes nécessaires
 ```
@@ -36,21 +51,32 @@ require_once 'class/Diagral/Diagral_eOne.class.php';
 use \Mguyard\Diagral\Diagral_eOne;
 ```
 
-### Instanciation :
+### Instanciation
 
 Instanciez ensuite l'object $MyAlarm (ou le nom de votre choix) avec la classe Diagral_eOne qui prend en paramètre votre email et mot de passe Diagral.
 ```
 $MyAlarm = new  Diagral_eOne("username@email.com","MyPassword");
 ```
 
-### Verbose :
+### Verbose
 
 Au besoin vous pouvez activer le mode Verbose (debug) avec la commande :
 ```
 $MyAlarm->verbose = True;
 ```
 
-### Connexion :
+### Retry
+
+Le Cloud Diagral n'est pour l'heure pas le plus stable. Par conséquent, par moment, il ne répond pas.
+
+L'API inclus un système de re-tentative et de délai entre les tentatives
+
+```
+$MyAlarm->doRequestAttempts = 5;        # Valeur par defaut = 1
+$MyAlarm->waitBetweenAttempts = 30;     # Valeur par defaut = 5
+```
+
+### Connexion
 
 Loggez-vous sur le cloud Diagral :
 ```
@@ -85,7 +111,7 @@ On se déconnecte avec :
 $MyAlarm->logout();
 ```
 
-### Connaitre l'état de son alarme :
+### Connaitre l'état de son alarme
 
 Une fois connecté, on peut récupérer l'état de l'alarme :
 ```
@@ -104,9 +130,10 @@ Liste des états possibles :
 * off => alarme désactivé
 * group => alarme active (voir la liste des groupes actifs)
 * presence => alarme en mode présence
+* tempogroup => phase de temporisation avant activation
 ```
 
-### Evènements :
+### Evènements
 
 Utilisez cette commande pour récupérer l'ensemble des evenements :
 ```
@@ -171,8 +198,32 @@ Pour lancer un scénarios (le paramètre correspond à l'ID du scenario) :
 $MyAlarm->launchScenario(1);
 ```
 
+### Gestion des erreurs
+
+Vous pouvez récupérer les erreurs API avec les try/catch
+
+```
+// Instanciation de mon objet Alarm
+$MyAlarm = new  Diagral_eOne("username@email.com","MyPassword");
+// Activation/Désactivation du mode verbose
+$MyAlarm->verbose = True;
+try {
+    $MyAlarm->login(); // On peut recuperer des information par le retour de la fonction
+    $MyAlarm->getSystems(); // Recupere la liste de toutes les alarmes
+    $MyAlarm->setSystemId(0); // Definit l'ID de son alarme
+    $MyAlarm->getConfiguration();
+    $MyAlarm->connect("1234");
+} catch (Exception $e) {
+    echo "Exception Message : ".$e->getMessage();
+    exit($e->getCode());
+}
+```
+
+## Participatif
+
 Je suis pas developpeur à l'origine donc n'hésitez pas à me remonter tout :
 * Problème de code
 * Bug
 * Demande de feature
-au travers de Github
+
+au travers de [Github](https://github.com/mguyard/Diagral-eOne-API-PHP/issues/new)

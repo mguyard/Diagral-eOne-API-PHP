@@ -395,12 +395,6 @@ class Diagral_eOne{
     public function getFirmwareUpdates() {
         $GetFirmwareUpdatesStatusPost = '{"currentVersions":{"BOX":"'.$this->versions["box"].'","BOXRADIO":"'.$this->versions["boxRadio"].'","PLUGKNX":"'.$this->versions["plugKnx"].'","CENTRAL":"'.$this->versions["central"].'","CENTRALRADIO":"'.$this->versions["centralRadio"].'"},"systemId":"'.$this->systems[$this->systemId]["id"].'","ttmSessionId":"'.$this->ttmSessionId.'"}';
         try {
-            if(list($data,$httpRespCode) = $this->doRequest("/api/applications/latest/version", "", FALSE, "GET")) {
-                if($httpRespCode != "200") {
-                    if ($this->verbose) {
-                        $this->addVerboseEvent("WARNING", "version is not in the response\n" . var_dump($data));
-                    }
-                } else {
                     if(list($data,$httpRespCode) = $this->doRequest("/configuration/getFirmwareUpdates", $GetFirmwareUpdatesStatusPost)) {
                         if(isset($data["totalUpdates"])) {
                             return intval($data["totalUpdates"]);
@@ -412,11 +406,6 @@ class Diagral_eOne{
                     } else {
                         throw new \Exception("Unable to request Firmware Update Status (http code : ".$httpRespCode." with message ".$data["message"].")", 19);
                     }
-                }
-            } else {
-                throw new \Exception("Unable to request Firmware Update Status (http code : ".$httpRespCode." with message ".$data["message"].")", 19);
-            }
-
         } catch (Exception $e) {
             throw $e;
         }

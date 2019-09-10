@@ -176,7 +176,7 @@ Pour désactiver l'alarme :
 $MyAlarm->completeDesactivation();
 ```
 
-Pour désactiver une seul zone de l'alarme activé:
+Pour désactiver une seule zone de l'alarme activé:
 ```
 $MyAlarm->partialDesactivation(2);
 ```

@@ -1312,6 +1312,8 @@ class Diagral_eOne{
                         $scenarioList[$scenario["name"]][] = $scenarioContent;
                     }
                 }
+            } else {
+                $scenarioList = array();
             }
         }
         return $scenarioList;

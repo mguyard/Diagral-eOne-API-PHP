@@ -1294,6 +1294,7 @@ class Diagral_eOne{
 
         }
         // Create table with scenarios informations (filtered informations)
+        $scenarioList = array();
         foreach ($this->DeviceMultizone["boxScenariosZone"] as $scenarioType => $scenarios) {
             if(is_array($scenarios)) {
                 foreach ($scenarios as $scenario) {
@@ -1312,8 +1313,6 @@ class Diagral_eOne{
                         $scenarioList[$scenario["name"]][] = $scenarioContent;
                     }
                 }
-            } else {
-                $scenarioList = array();
             }
         }
         return $scenarioList;

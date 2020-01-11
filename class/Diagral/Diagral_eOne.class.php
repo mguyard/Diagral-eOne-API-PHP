@@ -101,7 +101,7 @@ class Diagral_eOne{
      * Contain actual software versions
      * @var array
      */
-    private $versions;
+    public $versions;
     /**
      * doRequestRetry define how many time POST/GET requests to Diagral will be attempts
      * Default : 1
@@ -393,6 +393,9 @@ class Diagral_eOne{
      * @return int
      */
     public function getFirmwareUpdates() {
+        if(!isset($this->versions["central"]) && !isset($this->versions["centralRadio"])) {
+            $this->getDevicesMultizone();
+        }
         $GetFirmwareUpdatesStatusPost = '{"currentVersions":{"BOX":"'.$this->versions["box"].'","BOXRADIO":"'.$this->versions["boxRadio"].'","PLUGKNX":"'.$this->versions["plugKnx"].'","CENTRAL":"'.$this->versions["central"].'","CENTRALRADIO":"'.$this->versions["centralRadio"].'"},"systemId":"'.$this->systems[$this->systemId]["id"].'","ttmSessionId":"'.$this->ttmSessionId.'"}';
         try {
                     if(list($data,$httpRespCode) = $this->doRequest("/configuration/getFirmwareUpdates", $GetFirmwareUpdatesStatusPost)) {
